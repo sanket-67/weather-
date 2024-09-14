@@ -1,51 +1,41 @@
 const express = require('express');
-const axios = require('axios');
-const bodyparser = require('body-parser');
+const bodyParser = require('body-parser');
+const axios = require('axios'); // assuming you're using axios to fetch data
 const app = express();
-const PORT = 5000;
 
-// Set up the view engine
+// Body parser middleware
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Set EJS as the view engine
 app.set('view engine', 'ejs');
 
-// Middleware to parse URL-encoded bodies
-app.use(bodyparser.urlencoded({ extended: true }));
-
-const apiKey = '6cacc4db1d1d67d69c28125e81e3f5b2';
-
-// Function to get weather forecast data
-async function getForecast(location) {
-    const response = await axios.get(`https://api.openweathermap.org/data/2.5/forecast`, {
-        params: {
-            q: location,
-            appid: apiKey,
-            units: 'metric'
-        }
-    });
-    return response.data;
-}
-
-// Serve the main page
+// Handle GET request to render initial page
 app.get('/', (req, res) => {
-    res.render('index'); // Ensure 'index.ejs' exists in the 'views' folder
+    res.render('index', { forecastData: null }); // Pass null initially
 });
 
-// Handle search requests
+// Handle POST request from the search form
 app.post('/search', async (req, res) => {
     const location = req.body.query;
 
     try {
-        // Get weather forecast data
-        const forecastData = await getForecast(location);
+        // Example: Fetch weather data using OpenWeather API
+        const apiKey = '6cacc4db1d1d67d69c28125e81e3f5b2';  // Replace with your OpenWeather API key
+        const apiUrl = `http://api.openweathermap.org/data/2.5/forecast?q=${location}&units=metric&appid=${apiKey}`;
 
-        // Render the index page with weather data
+        const response = await axios.get(apiUrl);
+
+        const forecastData = response.data;
+
+        // Render the view with forecastData
         res.render('index', { forecastData });
     } catch (error) {
         console.error(error);
-        res.render('index', { forecastData: null }); // Handle the case where data isn't fetched
+        res.render('index', { forecastData: null, error: 'City not found or unable to fetch weather data.' });
     }
 });
 
 // Start the server
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(5000, () => {
+    console.log('Server is running on port 5000');
 });
